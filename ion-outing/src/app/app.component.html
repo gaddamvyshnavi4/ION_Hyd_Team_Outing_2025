@@ -1,0 +1,142 @@
+<main class="app card bounce mobile-friendly">
+  <div class="card-header">
+    <span class="dot"></span>
+    <span class="card-title">🎯 ION Hyderabad Team Outing 2025</span>
+  </div>
+  
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab-btn" [class.active]="activeTab === 'teams'" (click)="activeTab = 'teams'">Teams</button>
+    <button class="tab-btn" [class.active]="activeTab === 'buzzer'" (click)="activeTab = 'buzzer'">Buzzer</button>
+  </div>
+  
+  <div class="card-body" *ngIf="activeTab === 'teams'">
+    <div class="row" *ngIf="status !== 'Shuffle Completed'">
+      <!-- Form (decorative; submits to #added for CSS toast) -->
+      <div style="align-self:end; display:flex; gap:10px;">
+        <button class="btn" (click)="addNew()" *ngIf="isAdmin">Add New Player</button>
+        <button class="btn" (click)="restShuffle()" *ngIf="isAdmin">Reset Shuffel</button>
+
+      </div>
+      <section class="card">
+        <div class="card-header">
+          <span class="dot"></span>
+          <span class="card-title" *ngIf="!isCreated">Add Yourself</span>
+          <span class="card-title" *ngIf="isCreated">Welcome To ION Outing, {{name}}!</span>
+        </div>
+        <div class="card-body">
+          <h4 *ngIf="isCreated">"Please wait... Other players are still adding their names. As soon as everyone joins,
+            we’ll start shuffling the teams!"</h4>
+          <form *ngIf="!isCreated">
+            <div>
+              <label for="name">Full Name</label>
+              <input id="name" type="text" [(ngModel)]="name" name="name" placeholder="e.g., Alex" required />
+            </div>
+            <div>
+              <label for="gender">Gender</label>
+              <select id="gender" name="gender" required [(ngModel)]="gender">
+                <option value="M">Male ♂</option>
+                <option value="F">Female ♀</option>
+              </select>
+            </div>
+            <div style="align-self:end; display:flex; gap:10px;">
+              <button class="btn" type="submit" (click)="savePlayer()">Add</button>
+            </div>
+          </form>
+        </div>
+      </section>
+      <button class="btn" (click)="lock()" *ngIf="isAdmin">Lock</button>
+      <button class="btn" (click)="showShuffleConfig()" *ngIf="isAdmin && !showTeamConfig">Configure & Shuffle</button>
+      
+      <!-- Team Configuration Section -->
+      <section class="card" *ngIf="showTeamConfig && isAdmin">
+        <div class="card-header">
+          <span class="dot"></span>
+          <span class="card-title">Team Configuration</span>
+        </div>
+        <div class="card-body">
+          <div>
+            <label for="teamCount">Number of Teams</label>
+            <input id="teamCount" type="number" [(ngModel)]="numberOfTeams" 
+                   (ngModelChange)="updateTeamCount()" min="2" max="10" />
+          </div>
+          <div *ngFor="let teamName of teamNames; let i = index">
+            <label for="team{{i}}">Team {{i + 1}} Name</label>
+            <input id="team{{i}}" type="text" [(ngModel)]="teamNames[i]" 
+                   placeholder="Team {{getTeamLetter(i)}}" />
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn" (click)="shuffle()">Start Shuffle</button>
+            <button class="btn btn-secondary" (click)="showTeamConfig = false">Cancel</button>
+          </div>
+        </div>
+      </section>
+      <div class="row" *ngIf="status === 'Shuffle Started'">
+        <h1>Creating Teams...</h1>
+        <div>
+          <app-image-carousel *ngIf="status === 'Shuffle Started'"></app-image-carousel>
+        </div>
+      </div>
+      <br>
+      <!-- Roster (list of players) -->
+      <section class="card" *ngIf="status !== 'Shuffle Completed'">
+        <div class="card-header">
+          <span class="dot"></span>
+          <span class="card-title">Players - ({{players.length}})</span>
+        </div>
+        <div class="card-body roster">
+          <div class="player" *ngFor="let player of players">
+            <span class="badge" class="badge male" *ngIf="player.gender === 'M'">♂</span>
+            <span class="badge" class="badge female" *ngIf="player.gender === 'F'">♀</span>
+            <div class="name-container">
+              <span class="name">{{player.name}}</span>
+
+            </div>
+            <button class="btn-delete" *ngIf="isAdmin" (click)="deletePlayer(player)">×</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    
+    <!-- Show User Team Assignment After Shuffle -->
+    <app-welcome *ngIf="status === 'Shuffle Completed'" [name]="name" [userTeam]="getUserTeam()"></app-welcome>
+    
+    <!-- Show Reset Button After Shuffle -->
+    <div class="row" *ngIf="status === 'Shuffle Completed' && isAdmin">
+      <button class="btn" (click)="restShuffle()">Reset & Shuffle Again</button>
+    </div>
+
+    <br>
+
+
+    <!-- Teams -->
+    <section class="teams" id="teams" *ngIf="status === 'Shuffle Completed' && teams.length > 0">
+      <div class="team" *ngFor="let team of teams">
+        <div class="team-header">
+          <span class="team-title">{{team.name}}</span>
+          <span class="pill"><span class="dot"></span> Balanced</span>
+        </div>
+        <div class="team-body">
+          <ul>
+            <li class="li" *ngFor="let member of team.members">
+              <div class="member-info">
+                <span class="member-name">{{member.name}}</span>
+
+              </div>
+              <span class="tag m" *ngIf="member.gender === 'M'">♂</span>
+              <span class="tag f" *ngIf="member.gender === 'F'">♀</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <!-- Buzzer Tab Content -->
+  <div class="card-body" *ngIf="activeTab === 'buzzer'">
+    <app-buzzer [isAdmin]="isAdmin"></app-buzzer>
+  </div>
+</main>
+
+<!-- Welcome Popup -->
+<app-welcome-popup *ngIf="showWelcomePopup" (close)="closeWelcomePopup()"></app-welcome-popup>
